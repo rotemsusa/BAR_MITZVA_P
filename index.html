@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אישור הגעה | בר מצווה של אורי</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f9f8f6; --surface: #fff; --border: #e8e4de;
+      --text: #1a1a1a; --muted: #888;
+      --accent: #c8a96e; --accent-dark: #b8954d;
+      --danger: #e74c3c; --radius: 12px;
+      --shadow: 0 2px 24px rgba(0,0,0,0.07);
+    }
+    body {
+      font-family: 'Heebo', sans-serif; background: var(--bg);
+      min-height: 100vh; display: flex;
+      align-items: flex-start; justify-content: center;
+      padding: 24px 16px; color: var(--text);
+    }
+    .card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); width: 100%; max-width: 460px; overflow: hidden; }
+
+    /* Header */
+    .header { background: linear-gradient(135deg, #1a1a1a, #2d2d2d); color: white; text-align: center; padding: 36px 32px 28px; }
+    .star { font-size: 26px; margin-bottom: 10px; opacity: 0.85; }
+    .header h1 { font-size: 11px; font-weight: 400; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+    .header h2 { font-size: 30px; font-weight: 300; letter-spacing: 1px; }
+    .header h2 strong { font-weight: 600; }
+    .counter-pill {
+      display: inline-flex; align-items: center; gap: 10px;
+      margin-top: 16px; background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 100px;
+      padding: 8px 22px; font-size: 14px; color: rgba(255,255,255,0.8);
+      transition: opacity 0.3s;
+    }
+    .counter-pill.loading { opacity: 0.4; }
+    .count-num { font-size: 24px; font-weight: 600; color: var(--accent); line-height: 1; }
+
+    .body { padding: 28px; }
+    .screen { display: none; }
+    .screen.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+    /* PIN */
+    .pin-label { font-size: 14px; color: var(--muted); text-align: center; margin-bottom: 20px; line-height: 1.6; }
+    .pin-dots { display: flex; gap: 12px; justify-content: center; margin-bottom: 28px; }
+    .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); background: white; transition: all 0.2s; }
+    .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+    .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 240px; margin: 0 auto; }
+    .pin-btn { aspect-ratio:1; border: 1.5px solid var(--border); border-radius: 10px; background: white; font-family: 'Heebo', sans-serif; font-size: 20px; cursor: pointer; transition: all 0.15s; color: var(--text); }
+    .pin-btn:hover  { background: var(--bg); border-color: var(--accent); }
+    .pin-btn:active { transform: scale(0.95); }
+    .pin-btn.zero   { grid-column: 2; }
+    .pin-btn.del    { font-size: 16px; color: var(--muted); }
+    .pin-error { text-align: center; color: var(--danger); font-size: 13px; margin-top: 16px; min-height: 20px; }
+
+    /* Menu */
+    .menu-btns { display: flex; flex-direction: column; gap: 12px; }
+    .menu-btn {
+      width: 100%; padding: 16px; border-radius: 10px;
+      border: 1.5px solid var(--border); background: white;
+      font-family: 'Heebo', sans-serif; font-size: 15px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; color: var(--text);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .menu-btn:hover { border-color: var(--accent); background: #fdf9f4; }
+    .menu-btn .icon { font-size: 20px; }
+    .menu-btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .menu-btn.primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+
+    /* Form fields */
+    .field { margin-bottom: 20px; }
+    label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px; }
+    input, textarea {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 12px 14px; font-family: 'Heebo', sans-serif; font-size: 15px;
+      color: var(--text); background: white; transition: border-color 0.2s; outline: none;
+    }
+    input:focus, textarea:focus { border-color: var(--accent); }
+    input.error { border-color: var(--danger); }
+    .guests-row { display: flex; align-items: center; gap: 16px; }
+    .guests-row input { width: 80px; text-align: center; font-size: 22px; font-weight: 300; padding: 10px; }
+    .counter-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1.5px solid var(--border); background: white;
+      font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; color: var(--text); flex-shrink: 0;
+    }
+    .counter-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%; padding: 14px; border-radius: 8px; border: none;
+      background: var(--accent); color: white;
+      font-family: 'Heebo', sans-serif; font-size: 15px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-primary:hover    { background: var(--accent-dark); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary {
+      width: 100%; padding: 12px; border-radius: 8px;
+      border: 1.5px solid var(--border); background: white;
+      font-family: 'Heebo', sans-serif; font-size: 14px; color: var(--muted);
+      cursor: pointer; transition: all 0.2s; margin-top: 10px;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--text); }
+    .btn-danger {
+      width: 100%; padding: 12px; border-radius: 8px;
+      border: 1.5px solid #ffd0d0; background: #fff0f0;
+      font-family: 'Heebo', sans-serif; font-size: 14px; color: var(--danger);
+      cursor: pointer; transition: all 0.2s; margin-top: 10px;
+    }
+    .btn-danger:hover { background: #ffe4e4; }
+
+    /* Search */
+    .result-card {
+      border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 14px 16px; margin-bottom: 10px; background: #fafaf8;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .result-card:hover { border-color: var(--accent); background: #fdf9f4; }
+    .result-name  { font-size: 15px; font-weight: 500; margin-bottom: 3px; }
+    .result-meta  { font-size: 13px; color: var(--muted); }
+    .no-results   { text-align: center; color: var(--muted); font-size: 14px; padding: 24px 0; }
+
+    /* Screen header (back btn + title) */
+    .screen-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+    .back-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1.5px solid var(--border); background: white;
+      font-size: 16px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s;
+    }
+    .back-btn:hover { border-color: var(--accent); }
+    .screen-title { font-size: 16px; font-weight: 500; }
+
+    /* Success */
+    .success-icon {
+      width: 62px; height: 62px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 26px;
+    }
+    .success-h    { font-size: 22px; font-weight: 500; text-align: center; margin-bottom: 8px; }
+    .success-sub  { font-size: 14px; color: var(--muted); text-align: center; line-height: 1.7; }
+    .success-detail { margin-top: 20px; background: var(--bg); border-radius: 8px; padding: 14px 18px; font-size: 14px; line-height: 2; }
+    .success-total { margin-top: 14px; text-align: center; font-size: 15px; color: var(--muted); }
+    .success-total strong { color: var(--accent); font-size: 22px; }
+
+    /* Error banner */
+    .error-banner {
+      background: #fff0f0; border: 1px solid #ffcccc;
+      border-radius: 8px; padding: 12px 16px;
+      color: var(--danger); font-size: 13px; margin-bottom: 16px; display: none;
+    }
+    .error-banner.show { display: block; }
+
+    /* Loading */
+    .loading-overlay {
+      position: fixed; inset: 0; background: rgba(255,255,255,0.75);
+      display: none; align-items: center; justify-content: center; z-index: 999;
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner-large { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading"><div class="spinner-large"></div></div>
+
+<div class="card">
+  <div class="header">
+    <div class="star">✡</div>
+    <h1>אישור הגעה</h1>
+    <h2>בר מצווה של <strong>אורי</strong></h2>
+    <div class="counter-pill loading" id="counter-pill">
+      <span class="count-num" id="total-count">—</span>
+      <span>מגיעים אישרו הגעה</span>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- ① PIN -->
+    <div class="screen active" id="screen-pin">
+      <p class="pin-label">הזינו את קוד הגישה<br>שקיבלתם מאת המשפחה</p>
+      <div class="pin-dots">
+        <div class="pin-dot" id="dot-0"></div><div class="pin-dot" id="dot-1"></div>
+        <div class="pin-dot" id="dot-2"></div><div class="pin-dot" id="dot-3"></div>
+      </div>
+      <div class="pin-pad">
+        <button class="pin-btn" onclick="pinPress('1')">1</button>
+        <button class="pin-btn" onclick="pinPress('2')">2</button>
+        <button class="pin-btn" onclick="pinPress('3')">3</button>
+        <button class="pin-btn" onclick="pinPress('4')">4</button>
+        <button class="pin-btn" onclick="pinPress('5')">5</button>
+        <button class="pin-btn" onclick="pinPress('6')">6</button>
+        <button class="pin-btn" onclick="pinPress('7')">7</button>
+        <button class="pin-btn" onclick="pinPress('8')">8</button>
+        <button class="pin-btn" onclick="pinPress('9')">9</button>
+        <button class="pin-btn zero" onclick="pinPress('0')">0</button>
+        <button class="pin-btn del"  onclick="pinDelete()">⌫</button>
+      </div>
+      <div class="pin-error" id="pin-error"></div>
+    </div>
+
+    <!-- ② Menu -->
+    <div class="screen" id="screen-menu">
+      <div class="menu-btns">
+        <button class="menu-btn primary" onclick="showScreen('screen-form')">
+          <span class="icon">✅</span><span>אישור הגעה חדש</span>
+        </button>
+        <button class="menu-btn" onclick="showScreen('screen-search')">
+          <span class="icon">✏️</span><span>עדכון / ביטול הגעה קיימת</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ③ Form — new RSVP -->
+    <div class="screen" id="screen-form">
+      <div class="screen-header">
+        <button class="back-btn" onclick="showScreen('screen-menu')">→</button>
+        <div class="screen-title">אישור הגעה חדש</div>
+      </div>
+      <div class="error-banner" id="form-error"></div>
+      <div class="field"><label>שם מלא *</label><input type="text" id="name" placeholder="ישראל ישראלי" /></div>
+      <div class="field"><label>טלפון (אופציונלי)</label><input type="tel" id="phone" placeholder="050-0000000" /></div>
+      <div class="field"><label>תאריך הגעה</label><input type="date" id="date" /></div>
+      <div class="divider"></div>
+      <div class="field">
+        <label>כמה אנשים מגיעים?</label>
+        <div class="guests-row">
+          <button class="counter-btn" onclick="changeGuests('guests',-1)">−</button>
+          <input type="number" id="guests" value="1" min="1" max="20" readonly />
+          <button class="counter-btn" onclick="changeGuests('guests',1)">+</button>
+        </div>
+      </div>
+      <div class="field"><label>שמות המגיעים</label><textarea id="names" rows="3" placeholder="ישראל, שרה, יוסי..."></textarea></div>
+      <div class="field"><label>הערות</label><textarea id="notes" rows="2" placeholder="אלרגיות, בקשות מיוחדות..."></textarea></div>
+      <button class="btn-primary" id="save-btn" onclick="saveRSVP()">שמור אישור הגעה</button>
+      <button class="btn-secondary" onclick="showScreen('screen-menu')">ביטול</button>
+    </div>
+
+    <!-- ④ Search -->
+    <div class="screen" id="screen-search">
+      <div class="screen-header">
+        <button class="back-btn" onclick="showScreen('screen-menu')">→</button>
+        <div class="screen-title">חיפוש רישום קיים</div>
+      </div>
+      <div class="field">
+        <label>חפש לפי שם</label>
+        <input type="text" id="search-input" placeholder="הזן שם..." oninput="searchRSVP()" />
+      </div>
+      <div id="search-results"></div>
+    </div>
+
+    <!-- ⑤ Edit -->
+    <div class="screen" id="screen-edit">
+      <div class="screen-header">
+        <button class="back-btn" onclick="showScreen('screen-search')">→</button>
+        <div class="screen-title">עריכת רישום</div>
+      </div>
+      <div class="error-banner" id="edit-error"></div>
+      <input type="hidden" id="edit-row-id" />
+      <div class="field"><label>שם מלא *</label><input type="text" id="edit-name" /></div>
+      <div class="field"><label>טלפון</label><input type="tel" id="edit-phone" /></div>
+      <div class="field"><label>תאריך הגעה</label><input type="date" id="edit-date" /></div>
+      <div class="divider"></div>
+      <div class="field">
+        <label>כמה אנשים מגיעים?</label>
+        <div class="guests-row">
+          <button class="counter-btn" onclick="changeGuests('edit-guests',-1)">−</button>
+          <input type="number" id="edit-guests" value="1" min="1" max="20" readonly />
+          <button class="counter-btn" onclick="changeGuests('edit-guests',1)">+</button>
+        </div>
+      </div>
+      <div class="field"><label>שמות המגיעים</label><textarea id="edit-names" rows="3"></textarea></div>
+      <div class="field"><label>הערות</label><textarea id="edit-notes" rows="2"></textarea></div>
+      <button class="btn-primary" id="update-btn" onclick="updateRSVP()">שמור שינויים</button>
+      <button class="btn-danger" onclick="confirmDelete()">🗑️ מחק רישום זה</button>
+      <button class="btn-secondary" onclick="showScreen('screen-search')">ביטול</button>
+    </div>
+
+    <!-- ⑥ Success -->
+    <div class="screen" id="screen-success">
+      <div class="success-icon" id="s-icon">✓</div>
+      <div class="success-h"    id="s-title">תודה רבה!</div>
+      <p class="success-sub"   id="s-sub"></p>
+      <div class="success-detail" id="s-detail"></div>
+      <div class="success-total"  id="s-total"></div>
+      <button class="btn-secondary" style="margin-top:20px" onclick="goHome()">חזרה לתפריט</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // הגדרה יחידה — החלף ב-Cloud Run URL שלך
+  // ============================================================
+  const API_URL = 'https://YOUR_CLOUD_RUN_URL/api';
+  // ============================================================
+
+  let accessCode = '';
+  let pinValue   = '';
+
+  /* ---------- Utils ---------- */
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+  function showLoading(on) { document.getElementById('loading').classList.toggle('show', on); }
+  function setErr(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.classList.toggle('show', !!msg);
+  }
+
+  /* ---------- Counter (public, no auth) ---------- */
+  async function loadCounter() {
+    try {
+      const res  = await fetch(API_URL + '/count');
+      const data = await res.json();
+      document.getElementById('counter-pill').classList.remove('loading');
+      document.getElementById('total-count').textContent = data.total ?? '—';
+    } catch {
+      document.getElementById('total-count').textContent = '—';
+    }
+  }
+
+  /* ---------- PIN ---------- */
+  function pinPress(digit) {
+    if (pinValue.length >= 4) return;
+    pinValue += digit;
+    updateDots();
+    if (pinValue.length === 4) checkPin();
+  }
+  function pinDelete() {
+    pinValue = pinValue.slice(0, -1);
+    updateDots();
+    document.getElementById('pin-error').textContent = '';
+  }
+  function updateDots() {
+    for (let i = 0; i < 4; i++)
+      document.getElementById('dot-' + i).classList.toggle('filled', i < pinValue.length);
+  }
+  async function checkPin() {
+    showLoading(true);
+    try {
+      const res  = await fetch(API_URL + '/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': pinValue }
+      });
+      const data = await res.json();
+      if (data.success) {
+        accessCode = pinValue;
+        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+        showScreen('screen-menu');
+      } else {
+        document.getElementById('pin-error').textContent = 'קוד שגוי, נסו שוב';
+        setTimeout(() => { pinValue = ''; updateDots(); document.getElementById('pin-error').textContent = ''; }, 1000);
+      }
+    } catch {
+      document.getElementById('pin-error').textContent = 'שגיאת חיבור, נסו שוב';
+      setTimeout(() => { pinValue = ''; updateDots(); document.getElementById('pin-error').textContent = ''; }, 1500);
+    } finally { showLoading(false); }
+  }
+
+  /* ---------- Guest counter ---------- */
+  function changeGuests(id, delta) {
+    const el  = document.getElementById(id);
+    const val = parseInt(el.value) + delta;
+    if (val >= 1 && val <= 20) el.value = val;
+  }
+
+  /* ---------- Save new RSVP ---------- */
+  async function saveRSVP() {
+    const name   = document.getElementById('name').value.trim();
+    const phone  = document.getElementById('phone').value.trim();
+    const date   = document.getElementById('date').value;
+    const guests = document.getElementById('guests').value;
+    const names  = document.getElementById('names').value.trim();
+    const notes  = document.getElementById('notes').value.trim();
+
+    setErr('form-error', '');
+    if (!name) {
+      setErr('form-error', 'נא להזין שם מלא');
+      document.getElementById('name').classList.add('error');
+      setTimeout(() => document.getElementById('name').classList.remove('error'), 2000);
+      return;
+    }
+
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>שומר...';
+    showLoading(true);
+    try {
+      const res  = await fetch(API_URL + '/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': accessCode },
+        body: JSON.stringify({ action:'create', timestamp: new Date().toLocaleString('he-IL'), name, phone, date, guests, names, notes })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      await loadCounter();
+      showSuccess('✓', 'תודה רבה!', 'האישור נשמר — נשמח לראותכם! 🎉', name, date, guests, names, notes, data.total);
+      ['name','phone','names','notes'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('guests').value = 1;
+    } catch {
+      setErr('form-error', 'שגיאה בשמירה — נסו שוב');
+    } finally {
+      btn.disabled = false; btn.innerHTML = 'שמור אישור הגעה';
+      showLoading(false);
+    }
+  }
+
+  /* ---------- Search ---------- */
+  let searchTimer;
+  function searchRSVP() {
+    clearTimeout(searchTimer);
+    const q   = document.getElementById('search-input').value.trim();
+    const box = document.getElementById('search-results');
+    if (!q) { box.innerHTML = ''; return; }
+    searchTimer = setTimeout(async () => {
+      showLoading(true);
+      try {
+        const res  = await fetch(API_URL + '/rsvp?action=search&q=' + encodeURIComponent(q), {
+          headers: { 'X-API-Key': accessCode }
+        });
+        const data = await res.json();
+        renderResults(data.results || []);
+      } catch { box.innerHTML = '<div class="no-results">שגיאה בחיפוש</div>'; }
+      finally { showLoading(false); }
+    }, 400);
+  }
+
+  function renderResults(results) {
+    const box = document.getElementById('search-results');
+    if (!results.length) { box.innerHTML = '<div class="no-results">לא נמצאו תוצאות</div>'; return; }
+    box.innerHTML = results.map(r => `
+      <div class="result-card" onclick='openEdit(${JSON.stringify(r)})'>
+        <div class="result-name">${r.name}</div>
+        <div class="result-meta">${r.guests} מגיעים · ${r.date || 'ללא תאריך'}${r.names ? ' · ' + r.names : ''}</div>
+      </div>`).join('');
+  }
+
+  /* ---------- Edit ---------- */
+  function openEdit(r) {
+    document.getElementById('edit-row-id').value = r.rowId;
+    document.getElementById('edit-name').value   = r.name   || '';
+    document.getElementById('edit-phone').value  = r.phone  || '';
+    document.getElementById('edit-date').value   = r.date   || '';
+    document.getElementById('edit-guests').value = r.guests || 1;
+    document.getElementById('edit-names').value  = r.names  || '';
+    document.getElementById('edit-notes').value  = r.notes  || '';
+    setErr('edit-error', '');
+    showScreen('screen-edit');
+  }
+
+  async function updateRSVP() {
+    const rowId  = document.getElementById('edit-row-id').value;
+    const name   = document.getElementById('edit-name').value.trim();
+    const phone  = document.getElementById('edit-phone').value.trim();
+    const date   = document.getElementById('edit-date').value;
+    const guests = document.getElementById('edit-guests').value;
+    const names  = document.getElementById('edit-names').value.trim();
+    const notes  = document.getElementById('edit-notes').value.trim();
+
+    if (!name) { setErr('edit-error', 'נא להזין שם מלא'); return; }
+
+    const btn = document.getElementById('update-btn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>שומר...';
+    showLoading(true);
+    try {
+      const res  = await fetch(API_URL + '/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': accessCode },
+        body: JSON.stringify({ action:'update', rowId, name, phone, date, guests, names, notes })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      await loadCounter();
+      showSuccess('✓', 'עודכן בהצלחה!', '✏️ הרישום עודכן.', name, date, guests, names, notes, data.total);
+    } catch {
+      setErr('edit-error', 'שגיאה בעדכון — נסו שוב');
+    } finally {
+      btn.disabled = false; btn.innerHTML = 'שמור שינויים';
+      showLoading(false);
+    }
+  }
+
+  /* ---------- Delete ---------- */
+  function confirmDelete() { if (confirm('למחוק את הרישום לחלוטין?')) deleteRSVP(); }
+
+  async function deleteRSVP() {
+    const rowId = document.getElementById('edit-row-id').value;
+    const name  = document.getElementById('edit-name').value.trim();
+    showLoading(true);
+    try {
+      const res  = await fetch(API_URL + '/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': accessCode },
+        body: JSON.stringify({ action:'delete', rowId })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      await loadCounter();
+      document.getElementById('s-icon').textContent  = '🗑️';
+      document.getElementById('s-title').textContent = 'הרישום נמחק';
+      document.getElementById('s-sub').textContent   = `הרישום של ${name} הוסר מהרשימה`;
+      document.getElementById('s-detail').innerHTML  = '';
+      document.getElementById('s-total').innerHTML   = `סה"כ כעת: <strong>${data.total}</strong> מגיעים`;
+      showScreen('screen-success');
+    } catch { alert('שגיאה במחיקה — נסו שוב'); }
+    finally { showLoading(false); }
+  }
+
+  /* ---------- Success helper ---------- */
+  function showSuccess(icon, title, sub, name, date, guests, names, notes, total) {
+    document.getElementById('s-icon').textContent  = icon;
+    document.getElementById('s-title').textContent = title;
+    document.getElementById('s-sub').innerHTML     = sub;
+    document.getElementById('s-detail').innerHTML  = `
+      <strong>שם:</strong> ${name}<br>
+      ${date  ? `<strong>תאריך:</strong> ${new Date(date+'T12:00:00').toLocaleDateString('he-IL')}<br>` : ''}
+      <strong>מספר מגיעים:</strong> ${guests}<br>
+      ${names ? `<strong>שמות:</strong> ${names}<br>` : ''}
+      ${notes ? `<strong>הערות:</strong> ${notes}` : ''}
+    `;
+    document.getElementById('s-total').innerHTML =
+      total !== undefined ? `סה"כ מאושרים כעת: <strong>${total}</strong> 🎊` : '';
+    showScreen('screen-success');
+  }
+
+  function goHome() {
+    document.getElementById('search-input').value    = '';
+    document.getElementById('search-results').innerHTML = '';
+    showScreen('screen-menu');
+  }
+
+  // Load counter on page open — ציבורי, לפני PIN
+  loadCounter();
+</script>
+</body>
+</html>
